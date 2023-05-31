@@ -165,8 +165,6 @@ public class Register extends Fragment {
         };
     };
 
-
-
     // 設定 button Enable 以及 Disable
     private void setUi(int state){
         if(state == 0){

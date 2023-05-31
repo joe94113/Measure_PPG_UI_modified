@@ -100,12 +100,12 @@ public class MainActivity extends AppCompatActivity {
                 .setOperateTimeout(5000);
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        BleManager.getInstance().disconnectAllDevice();
-        BleManager.getInstance().destroy();
-    }
+//    @Override
+//    protected void onDestroy() {
+//        super.onDestroy();
+//        BleManager.getInstance().disconnectAllDevice();
+//        BleManager.getInstance().destroy();
+//    }
     private void createTabIcons()
     {
 

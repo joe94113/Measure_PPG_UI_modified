@@ -55,6 +55,7 @@ import java.util.Arrays;
 import com.clj.fastble.BleManager;
 import com.clj.fastble.callback.BleGattCallback;
 import com.clj.fastble.callback.BleNotifyCallback;
+import com.clj.fastble.callback.BleReadCallback;
 import com.clj.fastble.callback.BleScanCallback;
 import com.clj.fastble.callback.BleWriteCallback;
 import com.clj.fastble.data.BleDevice;
@@ -765,11 +766,6 @@ public class GuanView extends Fragment {
         filter.addAction(ACTION_USB_DEVICE_DETACHED);
         inflater.getContext().registerReceiver(broadcastReceiver, filter);
 
-//        IntentFilter filter = new IntentFilter();
-//        filter.addAction(ACTION_GATT_CONNECTED);
-//        filter.addAction(ACTION_GATT_DISCONNECTED);
-//        inflater.getContext().registerReceiver(broadcastReceiver, filter);
-
         // 藍芽使用
         button_paired = (Button) GuanView.findViewById(R.id.btn_paired);
         button_find = (Button) GuanView.findViewById(R.id.btn_conn);
@@ -789,6 +785,7 @@ public class GuanView extends Fragment {
             @Override
             public void onClick(View v) {
                 notifyBle();
+//                readBleData();
             }
         });
 
@@ -1611,8 +1608,8 @@ public class GuanView extends Fragment {
 
                         start_cal = false;
 
-                        long timeStart  = timestampQ.get(startPointer);
-                        long timeEnd    = timestampQ.get(endPointer);
+//                        long timeStart  = timestampQ.get(startPointer);
+//                        long timeEnd    = timestampQ.get(endPointer);
                         queueSize = dataQ.getQSize();
 
                         if(queueSize <= sliding_window_size) continue;
@@ -3194,25 +3191,9 @@ public class GuanView extends Fragment {
             Data[0] = (byte)(base+PPGTime);
 
         }
-//        String uuid_service = "0000dfb0-0000-1000-8000-00805f9b34fb";
-//        String uuid_characteristic_write = "0000dfb2-0000-1000-8000-00805f9b34fb";
-//        BleManager.getInstance().write(
-//                nowBleDevice,
-//                uuid_service,
-//                uuid_characteristic_write,
-//                Data,
-//                new BleWriteCallback() {
-//                    @Override
-//                    public void onWriteSuccess(int current, int total, byte[] justWrite) {
-//                        Log.d("onWriteSuccess", "onWriteSuccess");
-//                    }
-//
-//                    @Override
-//                    public void onWriteFailure(BleException exception) {
-//                        Log.d("onWriteSuccess", "onWriteFailure");
-//                    }
-//                });
-        serialPort.write(Data);
+        writeToBle(Data);
+        notifyBle();
+//        serialPort.write(Data);
     }
 
     // 將收到的 Serial 資料存入 Queue
@@ -3235,7 +3216,7 @@ public class GuanView extends Fragment {
 
     // 處理資料並更新圖片
     private void handleData(byte[] buf,int size,LayoutInflater inflater){
-//        Log.d("data", String.valueOf(buf) + "   " + size);
+//        button_find.setText(String.valueOf(buf));
         PushSerialData(buf,size);
         UpdateGraph(size,inflater);
 
@@ -3330,7 +3311,6 @@ public class GuanView extends Fragment {
     // 將收到的 Serial 資料 進行畫圖呈現
     private void UpdateGraph(final int size, final LayoutInflater inflater){
         if(!abortTraining){
-            Log.d("UpdateGraph", "UpdateGraph");
             G_Graph.post(new Runnable() {
                 @Override
                 public void run() {
@@ -4419,6 +4399,7 @@ public class GuanView extends Fragment {
         BleManager.getInstance().connect(bleDevice, new BleGattCallback() {
             @Override
             public void onStartConnect() {
+                button_paired.setEnabled(false); // 禁用按钮
                 button_paired.setText("開始連接"); // 设置按钮的新文字
                 Log.d("onStartConnect", "onStartConnect");
             }
@@ -4465,19 +4446,67 @@ public class GuanView extends Fragment {
                     @Override
                     public void onNotifySuccess() {
                         // 打开通知操作成功
-                        Log.d("onNotifySuccess", "onNotifySuccess");
+                        Log.d("notify", "Success");
+                        button_find.setEnabled(false); // 禁用按钮
+                        button_find.setText("成功開啟通知"); // 设置按钮的新文字
+                        Toast.makeText((Activity)LInflater.getContext(), "開始接收藍芽資料", Toast.LENGTH_LONG).show();
                     }
 
                     @Override
                     public void onNotifyFailure(BleException exception) {
+                        Log.d("notify", "Failure");
                         // 打开通知操作失败
+                        button_find.setEnabled(true); // 禁用按钮
+                        button_find.setText("通知操作失敗"); // 设置按钮的新文字
+                        Toast.makeText((Activity)LInflater.getContext(), "接收藍芽資料失敗", Toast.LENGTH_LONG).show();
                     }
 
                     @Override
                     public void onCharacteristicChanged(byte[] data) {
                         // 打开通知后，设备发过来的数据将在这里出现
-                        handleData(data, data.length,LInflater);
 //                        Log.d("data", String.valueOf(data));
+                        handleData(data, data.length,LInflater);
+                    }
+                });
+    }
+
+    private void writeToBle(byte[] Data){
+        String uuid_service = "0000dfb0-0000-1000-8000-00805f9b34fb";
+        String uuid_characteristic_write = "0000dfb1-0000-1000-8000-00805f9b34fb";
+        BleManager.getInstance().write(
+                nowBleDevice,
+                uuid_service,
+                uuid_characteristic_write,
+                Data,
+                new BleWriteCallback() {
+                    @Override
+                    public void onWriteSuccess(int current, int total, byte[] justWrite) {
+                        Log.d("onWriteSuccess", "current: " + String.valueOf(current) + "total: " + String.valueOf(total) + "justWrite: " + justWrite);
+                    }
+
+                    @Override
+                    public void onWriteFailure(BleException exception) {
+                        Log.d("onWriteSuccess", "onWriteFailure");
+                    }
+                });
+    }
+
+    private void readBleData(){
+        String uuid_service = "0000dfb0-0000-1000-8000-00805f9b34fb";
+        String uuid_characteristic_read = "0000dfb1-0000-1000-8000-00805f9b34fb";
+        BleManager.getInstance().read(
+                nowBleDevice,
+                uuid_service,
+                uuid_characteristic_read,
+                new BleReadCallback() {
+                    @Override
+                    public void onReadSuccess(byte[] data) {
+                        handleData(data, data.length,LInflater);
+                    }
+
+                    @Override
+                    public void onReadFailure(BleException exception) {
+
                     }
                 });
     }

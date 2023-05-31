@@ -449,7 +449,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Search"
+                android:text="搜尋藍芽"
                 android:textStyle="bold" />
 
             <Button
@@ -457,7 +457,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Connect"
+                android:text="接收藍芽資訊"
                 android:textStyle="bold" />
         </LinearLayout>
 
