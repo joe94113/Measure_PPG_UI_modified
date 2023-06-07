@@ -8,9 +8,6 @@
     android:layout_marginLeft="20dp"
     android:layout_marginRight="20dp">
 <LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:opencv="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_marginBottom="20dp"
@@ -452,13 +449,13 @@
                 android:text="搜尋藍芽"
                 android:textStyle="bold" />
 
-            <Button
-                android:id="@+id/btn_conn"
+            <TextView
+                android:id="@+id/ble_status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="接收藍芽資訊"
-                android:textStyle="bold" />
+                android:text="藍芽連接狀態" />
+
         </LinearLayout>
 
     </LinearLayout>

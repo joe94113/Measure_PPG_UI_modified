@@ -117,7 +117,6 @@ public class GuanView extends Fragment {
     private ArrayAdapter<String> deviceId;
     private List<BleDevice> bleDeviceList = new ArrayList<>();
     private Button button_paired;
-    private Button button_find;
     private ListView event_listView;
     private BleDevice nowBleDevice;
     private final int SerialDataSize = 90060;
@@ -394,6 +393,7 @@ public class GuanView extends Fragment {
     private boolean init_error = false;
     private boolean ticking_enable = false;
 
+    private TextView ble_status;
     private TextView time_tv;
     private TextView console_tv;
     private TextView console_tv2;
@@ -767,8 +767,8 @@ public class GuanView extends Fragment {
         inflater.getContext().registerReceiver(broadcastReceiver, filter);
 
         // 藍芽使用
+        ble_status = GuanView.findViewById(R.id.ble_status);
         button_paired = (Button) GuanView.findViewById(R.id.btn_paired);
-        button_find = (Button) GuanView.findViewById(R.id.btn_conn);
         event_listView = (ListView) GuanView.findViewById(R.id.Show_B_List);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             event_listView.setNestedScrollingEnabled(true);
@@ -779,13 +779,6 @@ public class GuanView extends Fragment {
             @Override
             public void onClick(View v) {
                 startScan();
-            }
-        });
-        button_find.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                notifyBle();
-//                readBleData();
             }
         });
 
@@ -3216,7 +3209,6 @@ public class GuanView extends Fragment {
 
     // 處理資料並更新圖片
     private void handleData(byte[] buf,int size,LayoutInflater inflater){
-//        button_find.setText(String.valueOf(buf));
         PushSerialData(buf,size);
         UpdateGraph(size,inflater);
 
@@ -4367,12 +4359,14 @@ public class GuanView extends Fragment {
 //                Log.d("onScanning", bleDevice.getName());
                 deviceName.add(bleDevice.getName() + "  " +bleDevice.getMac());
                 deviceId.add(bleDevice.getMac());
+                event_listView.setAdapter(deviceName);
+                ble_status.setText("請等待掃描完畢後再點擊藍芽已連接");
             }
 
             @Override
             public void onScanFinished(List<BleDevice> scanResultList) {
                 bleDeviceList = scanResultList;
-                event_listView.setAdapter(deviceName);
+//                event_listView.setAdapter(deviceName);
                 event_listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                     @Override
                     public void onItemClick(AdapterView<?> partent, View view, int position, long id) {
@@ -4389,6 +4383,7 @@ public class GuanView extends Fragment {
                         deviceId.clear();
                     }
                 });
+                ble_status.setText("藍芽等待連接");
                 button_paired.setEnabled(true); // 禁用按钮
                 button_paired.setText("重新搜尋"); // 设置按钮的新文字
                 Log.d("onScanFinished", "onScanFinished");
@@ -4408,6 +4403,7 @@ public class GuanView extends Fragment {
             public void onConnectFail(BleDevice bleDevice, BleException exception) {
                 button_paired.setEnabled(true); // 禁用按钮
                 button_paired.setText("搜尋藍芽"); // 设置按钮的新文字
+                ble_status.setText("藍芽連接失敗");
                 SerialFlag=false;
                 setButtonEnable(SerialFlag);
                 Toast.makeText((Activity)LInflater.getContext(), "藍芽連接失敗", Toast.LENGTH_LONG).show();
@@ -4417,6 +4413,7 @@ public class GuanView extends Fragment {
             public void onConnectSuccess(BleDevice bleDevice, BluetoothGatt gatt, int status) {
                 button_paired.setEnabled(false); // 禁用按钮
                 button_paired.setText("已成功連接" + bleDevice.getName() + ' ' + bleDevice.getMac()); // 设置按钮的新文字
+                ble_status.setText("已連接" + bleDevice.getName() + ' ' + bleDevice.getMac());
                 SerialFlag=true;
                 setButtonEnable(SerialFlag);
                 Log.d("onConnectSuccess", "onConnectSuccess");
@@ -4447,8 +4444,6 @@ public class GuanView extends Fragment {
                     public void onNotifySuccess() {
                         // 打开通知操作成功
                         Log.d("notify", "Success");
-                        button_find.setEnabled(false); // 禁用按钮
-                        button_find.setText("成功開啟通知"); // 设置按钮的新文字
                         Toast.makeText((Activity)LInflater.getContext(), "開始接收藍芽資料", Toast.LENGTH_LONG).show();
                     }
 
@@ -4456,9 +4451,7 @@ public class GuanView extends Fragment {
                     public void onNotifyFailure(BleException exception) {
                         Log.d("notify", "Failure");
                         // 打开通知操作失败
-                        button_find.setEnabled(true); // 禁用按钮
-                        button_find.setText("通知操作失敗"); // 设置按钮的新文字
-                        Toast.makeText((Activity)LInflater.getContext(), "接收藍芽資料失敗", Toast.LENGTH_LONG).show();
+//                        Toast.makeText((Activity)LInflater.getContext(), "接收藍芽資料失敗", Toast.LENGTH_LONG).show();
                     }
 
                     @Override
@@ -4487,26 +4480,6 @@ public class GuanView extends Fragment {
                     @Override
                     public void onWriteFailure(BleException exception) {
                         Log.d("onWriteSuccess", "onWriteFailure");
-                    }
-                });
-    }
-
-    private void readBleData(){
-        String uuid_service = "0000dfb0-0000-1000-8000-00805f9b34fb";
-        String uuid_characteristic_read = "0000dfb1-0000-1000-8000-00805f9b34fb";
-        BleManager.getInstance().read(
-                nowBleDevice,
-                uuid_service,
-                uuid_characteristic_read,
-                new BleReadCallback() {
-                    @Override
-                    public void onReadSuccess(byte[] data) {
-                        handleData(data, data.length,LInflater);
-                    }
-
-                    @Override
-                    public void onReadFailure(BleException exception) {
-
                     }
                 });
     }

@@ -19,7 +19,7 @@ int TimerSample = 0;
 void setup() {
   
   // Open the serial port and set the baud
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   // Clear the serial buffer data
   while(Serial.available())
